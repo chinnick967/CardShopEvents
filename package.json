@@ -10,8 +10,11 @@
   },
   "dependencies": {
     "next": "16.2.11",
+    "pg": "^8.22.0",
+    "pg-hstore": "^2.3.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
     "@types/node": "^20",
