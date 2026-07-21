@@ -1,0 +1,76 @@
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px;
+}
+
+.description {
+  color: var(--white);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 72ch;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px 22px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.label {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--neon-cyan-edge);
+  border-top-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: gn-spin 0.7s linear infinite;
+}
+
+.retry {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--neon-cyan-edge);
+  color: var(--neon-cyan);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--neon-cyan-soft);
+  }
+}

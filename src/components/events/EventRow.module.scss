@@ -1,9 +1,10 @@
 .row {
+  cursor: pointer;
   border-bottom: 1px solid var(--border-soft);
   transition: background 0.15s ease;
 
   &:hover {
-    background: rgba(0, 240, 255, 0.03);
+    background: rgba(0, 240, 255, 0.04);
   }
 
   td {
@@ -12,14 +13,49 @@
   }
 }
 
+.expanded {
+  background: rgba(0, 240, 255, 0.05);
+  border-bottom-color: transparent;
+}
+
 .full {
   opacity: 0.72;
 }
 
 .titleCell {
   display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chevron {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--neon-cyan);
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.18s ease, color 0.15s ease;
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+.expanded .chevron {
+  transform: rotate(90deg);
+}
+
+.titleText {
+  display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
 }
 
 .title {
@@ -35,8 +71,11 @@
 }
 
 .game {
-  display: inline-block;
-  padding: 4px 9px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  // More top than bottom to offset Rajdhani's high baseline (optical centering).
+  padding: 6px 9px 4px;
   background: var(--neon-cyan-soft);
   border: 1px solid var(--neon-cyan-edge);
   border-radius: 999px;
@@ -60,4 +99,14 @@
 .action {
   text-align: right;
   white-space: nowrap;
+}
+
+// ---- Expanded detail row --------------------------------------------------
+.detailRow {
+  background: rgba(0, 240, 255, 0.05);
+}
+
+.detailCell {
+  padding: 14px 18px 22px 46px; // indent under the title, past the chevron
+  border-bottom: 1px solid var(--border-soft);
 }

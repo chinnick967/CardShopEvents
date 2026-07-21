@@ -1,24 +1,32 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { sequelize } from "../lib/db";
 
 /**
- * Apply the schema migration. Splits the .sql file into individual statements
- * so each runs as its own simple query (robust across drivers). The DDL is
- * idempotent, so re-running is safe.
+ * Apply every migration in src/db/migrations, in filename order. Each file is
+ * split into individual statements (robust across drivers). All DDL is
+ * idempotent (CREATE/ALTER ... IF NOT EXISTS), so re-running is safe.
  */
 export async function migrate(): Promise<void> {
-  const sqlPath = join(process.cwd(), "src", "db", "migrations", "001_init.sql");
-  const sql = readFileSync(sqlPath, "utf8");
+  const dir = join(process.cwd(), "src", "db", "migrations");
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
 
-  const statements = sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+  let total = 0;
+  for (const file of files) {
+    const sql = readFileSync(join(dir, file), "utf8");
+    const statements = sql
+      .split(";")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
-  for (const statement of statements) {
-    await sequelize.query(statement);
+    for (const statement of statements) {
+      await sequelize.query(statement);
+    }
+    total += statements.length;
+    console.log(`  ✓ ${file} (${statements.length} statements)`);
   }
 
-  console.log(`✓ migrate: game_night schema ready (${statements.length} statements)`);
+  console.log(`✓ migrate: applied ${files.length} migration file(s), ${total} statements`);
 }

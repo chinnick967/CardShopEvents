@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EventDTO } from "@/lib/types";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { apiFetch, type ApiError } from "@/lib/apiClient";
+import { useMyEvents } from "./MyEventsProvider";
 import EventRow from "./EventRow";
 import EventCard from "./EventCard";
 import styles from "./EventsDashboard.module.scss";
@@ -17,34 +18,53 @@ type Status = "idle" | "loading" | "error";
 
 export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
   const { user, openAuth } = useAuth();
+  const { revision } = useMyEvents();
   const [events, setEvents] = useState<EventDTO[]>(initialEvents);
   const [q, setQ] = useState("");
   const [game, setGame] = useState("");
   const [status, setStatus] = useState<Status>("idle");
-  const [rsvpingId, setRsvpingId] = useState<number | null>(null);
+  // The event with an RSVP/cancel request currently in flight.
+  const [busyId, setBusyId] = useState<number | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
 
   const reqSeq = useRef(0);
   const didMount = useRef(false);
   const lastUserId = useRef<number | null | undefined>(undefined);
+  const lastRevision = useRef(revision);
+  // Synchronous in-flight guard — defeats same-tick double-clicks before the
+  // disabled/busy state has re-rendered.
+  const actionInFlight = useRef(false);
 
-  const fetchEvents = useCallback(async (qv: string, gv: string) => {
-    const seq = ++reqSeq.current;
-    setStatus("loading");
+  // The viewer's IANA timezone, sent so the server computes "today" in their zone.
+  const tz = useMemo(() => {
     try {
-      const params = new URLSearchParams();
-      if (qv.trim()) params.set("q", qv.trim());
-      if (gv) params.set("game", gv);
-      const { events } = await apiFetch<{ events: EventDTO[] }>(`/api/events?${params.toString()}`);
-      // Ignore out-of-order responses (keep only the latest request's result).
-      if (seq === reqSeq.current) {
-        setEvents(events);
-        setStatus("idle");
-      }
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
     } catch {
-      if (seq === reqSeq.current) setStatus("error");
+      return undefined;
     }
   }, []);
+
+  const fetchEvents = useCallback(
+    async (qv: string, gv: string, opts?: { silent?: boolean }) => {
+      const seq = ++reqSeq.current;
+      if (!opts?.silent) setStatus("loading");
+      try {
+        const params = new URLSearchParams();
+        if (qv.trim()) params.set("q", qv.trim());
+        if (gv) params.set("game", gv);
+        if (tz) params.set("tz", tz);
+        const { events } = await apiFetch<{ events: EventDTO[] }>(`/api/events?${params.toString()}`);
+        // Ignore out-of-order responses (keep only the latest request's result).
+        if (seq === reqSeq.current) {
+          setEvents(events);
+          if (!opts?.silent) setStatus("idle");
+        }
+      } catch {
+        if (seq === reqSeq.current && !opts?.silent) setStatus("error");
+      }
+    },
+    [tz],
+  );
 
   // Debounced refetch when filters change. Skip the first mount — SSR data is fresh.
   useEffect(() => {
@@ -69,16 +89,37 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  // A cancel from the My Events modal bumps `revision` — resync the board so it
+  // reflects the freed seat / no-longer-joined state.
+  useEffect(() => {
+    if (lastRevision.current === revision) return;
+    lastRevision.current = revision;
+    fetchEvents(q, game);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revision]);
+
+  // On mount, silently re-fetch with the viewer's timezone so "today" is computed
+  // in their zone (the SSR list used a UTC default). The setTimeout keeps the
+  // state update out of the effect body; silent means no loading flash.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fetchEvents(q, game, { silent: true });
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onSignUp = useCallback(
     async (event: EventDTO) => {
       if (!user) {
         openAuth("You need an account to RSVP for an event. Sign in or create one — it only takes a moment.", "signup");
         return;
       }
-      if (event.isFull || event.viewerJoined || rsvpingId !== null) return;
+      if (event.isFull || event.viewerJoined || actionInFlight.current) return;
+      actionInFlight.current = true;
 
       setRowError(null);
-      setRsvpingId(event.id);
+      setBusyId(event.id);
       try {
         const { event: updated } = await apiFetch<{ event: EventDTO; alreadyJoined: boolean }>(
           `/api/events/${event.id}/rsvp`,
@@ -91,10 +132,35 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
         // Reconcile with the server (e.g. it filled up while we waited).
         fetchEvents(q, game);
       } finally {
-        setRsvpingId(null);
+        actionInFlight.current = false;
+        setBusyId(null);
       }
     },
-    [user, openAuth, rsvpingId, q, game, fetchEvents],
+    [user, openAuth, q, game, fetchEvents],
+  );
+
+  const onCancel = useCallback(
+    async (event: EventDTO) => {
+      if (!user || !event.viewerJoined || actionInFlight.current) return;
+      actionInFlight.current = true;
+
+      setRowError(null);
+      setBusyId(event.id);
+      try {
+        const { event: updated } = await apiFetch<{ event: EventDTO }>(`/api/events/${event.id}/rsvp`, {
+          method: "DELETE",
+        });
+        setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      } catch (err) {
+        const apiErr = err as ApiError;
+        setRowError({ id: event.id, message: apiErr.message ?? "Could not cancel. Please try again." });
+        fetchEvents(q, game);
+      } finally {
+        actionInFlight.current = false;
+        setBusyId(null);
+      }
+    },
+    [user, q, game, fetchEvents],
   );
 
   const showEmpty = status !== "loading" && events.length === 0;
@@ -179,9 +245,10 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
                   <EventRow
                     key={event.id}
                     event={event}
-                    rsvping={rsvpingId === event.id}
+                    busy={busyId === event.id}
                     error={rowError?.id === event.id ? rowError.message : undefined}
                     onSignUp={() => onSignUp(event)}
+                    onCancel={() => onCancel(event)}
                   />
                 ))}
               </tbody>
@@ -193,9 +260,10 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
               <EventCard
                 key={event.id}
                 event={event}
-                rsvping={rsvpingId === event.id}
+                busy={busyId === event.id}
                 error={rowError?.id === event.id ? rowError.message : undefined}
                 onSignUp={() => onSignUp(event)}
+                onCancel={() => onCancel(event)}
               />
             ))}
           </div>

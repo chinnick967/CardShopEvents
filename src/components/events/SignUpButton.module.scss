@@ -1,0 +1,101 @@
+// Fixed-width slot shared by every RSVP state (Sign Up / Full / Joined / Cancel)
+// so they are all identical width — the table column never reflows on sign-up,
+// cancel, or hover.
+.slot {
+  display: inline-block;
+  width: 120px;
+}
+
+// Sign Up / Full (the shared Button component) fill the slot.
+.fill {
+  width: 100%;
+}
+
+// "Joined" state: clearly shows the viewer is in, and doubles as the cancel
+// control. The labels + spinner overlap in one grid cell so the button is a
+// fixed size across Joined / Cancel / loading.
+.joined {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--green);
+  background: rgba(63, 209, 139, 0.12);
+  color: var(--green);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// All three share one cell (1/1) → they overlap and the cell sizes to the
+// widest. `visibility` (not `display`) keeps every label's box, so toggling
+// which one shows never changes the button's width.
+.joinedLabel,
+.cancelLabel,
+.spinner {
+  grid-area: 1 / 1;
+}
+
+.cancelLabel,
+.spinner {
+  visibility: hidden;
+}
+
+// Pointer devices: reveal the red "✕ Cancel" on hover/focus.
+@media (hover: hover) {
+  .joined:hover:not([data-busy]),
+  .joined:focus-visible:not([data-busy]) {
+    border-color: var(--red);
+    background: rgba(252, 74, 90, 0.14);
+    color: var(--red);
+
+    .joinedLabel {
+      visibility: hidden;
+    }
+    .cancelLabel {
+      visibility: visible;
+    }
+  }
+}
+
+// Touch devices (no hover): append a ✕ hint to "✓ Joined" so cancelling stays
+// discoverable without a hover state.
+@media (hover: none) {
+  .joinedLabel::after {
+    content: ' ✕';
+    margin-left: 3px;
+    opacity: 0.75;
+  }
+}
+
+// Loading: overlay the spinner and hide the labels (kept in place, so width
+// stays constant).
+.joined[data-busy] {
+  cursor: default;
+
+  .joinedLabel,
+  .cancelLabel {
+    visibility: hidden;
+  }
+  .spinner {
+    visibility: visible;
+  }
+}
+
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: gn-spin 0.7s linear infinite;
+}

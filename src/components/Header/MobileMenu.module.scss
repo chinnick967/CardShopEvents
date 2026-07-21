@@ -1,0 +1,187 @@
+@use 'breakpoints' as *;
+
+// Hamburger trigger — shown only on mobile (the desktop cluster is hidden there).
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 42px;
+  height: 36px;
+  padding: 9px 8px;
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--neon-cyan-edge);
+  }
+
+  @media screen and (max-width: $mobile) {
+    display: inline-flex;
+  }
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--neon-cyan);
+  border-radius: 1px;
+}
+
+// ---- Slide-out drawer (portaled to <body>) --------------------------------
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.backdropOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 200;
+  height: 100dvh;
+  width: min(320px, 85vw);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--surface-1);
+  border-left: 1px solid var(--neon-cyan-edge);
+  box-shadow: -20px 0 45px rgba(0, 0, 0, 0.55);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+}
+
+.drawerOpen {
+  transform: translateX(0);
+}
+
+// Belt-and-suspenders: never show the drawer/backdrop above the mobile
+// breakpoint (covers the open-then-resize edge case).
+@media screen and (min-width: #{$mobile + 1}) {
+  .drawer,
+  .backdrop {
+    display: none;
+  }
+}
+
+.drawerHead {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--neon-cyan);
+  }
+}
+
+// ---- Account section (player info + Sign Out) -----------------------------
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 4px 16px;
+}
+
+.name {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--white);
+}
+
+.role {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 12px;
+}
+
+.signOut {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  color: var(--muted);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: var(--neon-cyan-edge);
+    color: var(--neon-cyan);
+  }
+}
+
+// ---- Separator + content menu ---------------------------------------------
+.separator {
+  height: 1px;
+  margin: 4px 0 12px;
+  background: linear-gradient(90deg, var(--neon-cyan-edge), transparent);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 4px;
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: var(--neon-cyan);
+    background: var(--neon-cyan-soft);
+  }
+}

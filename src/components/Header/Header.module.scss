@@ -64,6 +64,27 @@
 .right {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.myEvents {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--neon-cyan-edge);
+  color: var(--neon-cyan);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: var(--neon-cyan-soft);
+    border-color: var(--neon-cyan);
+  }
 }
 
 .signIn {
@@ -88,6 +109,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
+
+  // On mobile the whole cluster collapses into the hamburger drawer.
+  @media screen and (max-width: $mobile) {
+    display: none;
+  }
 }
 
 .meta {
@@ -132,5 +158,22 @@
 
   @media screen and (max-width: $mobile-small) {
     padding: 7px 10px;
+  }
+}
+
+// Tighten the header so it doesn't crowd on the smallest screens.
+@media screen and (max-width: $mobile-small) {
+  .name {
+    font-size: 15px;
+    letter-spacing: 0.12em;
+  }
+
+  .myEvents {
+    padding: 7px 10px;
+  }
+
+  // "My Events" → "Events" (button keeps its aria-label).
+  .myEventsPrefix {
+    display: none;
   }
 }

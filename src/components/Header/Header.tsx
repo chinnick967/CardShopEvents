@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useMyEvents } from "@/components/events/MyEventsProvider";
+import MobileMenu from "./MobileMenu";
 import styles from "./Header.module.scss";
 
 export default function Header() {
   const { user, openAuth, logout } = useAuth();
+  const { openModal: openMyEvents } = useMyEvents();
 
   return (
     <header className={styles.header}>
@@ -21,15 +24,28 @@ export default function Header() {
 
         <div className={styles.right}>
           {user ? (
-            <div className={styles.user}>
-              <div className={styles.meta}>
-                <span className={styles.userName}>{user.name}</span>
-                <span className={styles.role}>{user.role}</span>
+            <>
+              <div className={styles.user}>
+                <div className={styles.meta}>
+                  <span className={styles.userName}>{user.name}</span>
+                  <span className={styles.role}>{user.role}</span>
+                </div>
+                {user.role === "player" && (
+                  <button
+                    className={styles.myEvents}
+                    onClick={() => openMyEvents()}
+                    type="button"
+                    aria-label="My Events"
+                  >
+                    <span className={styles.myEventsPrefix}>My </span>Events
+                  </button>
+                )}
+                <button className={styles.signOut} onClick={() => logout()} type="button">
+                  Sign out
+                </button>
               </div>
-              <button className={styles.signOut} onClick={() => logout()} type="button">
-                Sign out
-              </button>
-            </div>
+              <MobileMenu user={user} onSignOut={logout} onOpenMyEvents={openMyEvents} />
+            </>
           ) : (
             <button className={styles.signIn} onClick={() => openAuth()} type="button">
               Sign In

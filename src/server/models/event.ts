@@ -17,6 +17,13 @@ export class Event extends Model<InferAttributes<Event>, InferCreationAttributes
   /** Denormalized live attendee count, maintained transactionally with signups. */
   declare seatsTaken: CreationOptional<number>;
   declare organizerId: CreationOptional<number | null>;
+  // Detail fields (shown when a row is expanded).
+  declare description: CreationOptional<string | null>;
+  declare format: CreationOptional<string | null>;
+  declare prizes: CreationOptional<string | null>;
+  declare skillLevel: CreationOptional<string | null>;
+  declare entryFeeCents: CreationOptional<number>;
+  declare durationMinutes: CreationOptional<number | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -31,6 +38,12 @@ Event.init(
     capacity: { type: DataTypes.INTEGER, allowNull: false },
     seatsTaken: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     organizerId: { type: DataTypes.INTEGER, allowNull: true },
+    description: { type: DataTypes.TEXT, allowNull: true },
+    format: { type: DataTypes.TEXT, allowNull: true },
+    prizes: { type: DataTypes.TEXT, allowNull: true },
+    skillLevel: { type: DataTypes.TEXT, allowNull: true },
+    entryFeeCents: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    durationMinutes: { type: DataTypes.INTEGER, allowNull: true },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },

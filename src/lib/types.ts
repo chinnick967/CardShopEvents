@@ -26,3 +26,13 @@ export interface EventDTO {
   /** Whether the requesting user already holds an active RSVP for this event. */
   viewerJoined: boolean;
 }
+
+/** The full event, fetched when a row is expanded (P2). */
+export interface EventDetailDTO extends EventDTO {
+  description: string | null;
+  format: string | null;
+  prizes: string | null;
+  skillLevel: string | null;
+  entryFeeCents: number;
+  durationMinutes: number | null;
+}
