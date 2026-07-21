@@ -110,6 +110,10 @@
   flex-direction: column;
   gap: 3px;
   min-width: 0; // allow truncation inside flex
+  // Absorb the row's spare width. With space-between and THREE children
+  // (chevron, info, count — the organizer variant), leftover space would
+  // otherwise pad both gaps and float short rows' text toward the middle.
+  flex: 1;
 }
 
 .eventTitle {
