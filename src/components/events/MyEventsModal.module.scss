@@ -121,7 +121,8 @@
 .meta {
   display: flex;
   align-items: center;
-  gap: 7px;
+  flex-wrap: wrap; // long game names + dates wrap on narrow phones instead of overflowing
+  gap: 3px 7px;
   font-size: 12.5px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -201,4 +202,110 @@
   color: var(--red);
   font-size: 12.5px;
   font-weight: 600;
+}
+
+// Organizer variant — expandable attendee roster (O2).
+.itemClickable {
+  cursor: pointer;
+}
+
+.itemExpanded {
+  border-left-color: var(--neon-cyan);
+}
+
+.chevron {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--neon-cyan);
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.18s ease, color 0.15s ease;
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+.itemExpanded .chevron {
+  transform: rotate(90deg);
+}
+
+.panel {
+  margin-top: 10px;
+  padding: 10px 12px 4px 30px; // indent under the title, past the chevron
+  border-top: 1px solid var(--border-soft);
+}
+
+.roster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panelHead {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+}
+
+.attendeeList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.attendeeRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+}
+
+.attendeeName {
+  font-size: 13.5px;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.joined {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+// Organizer variant — read-only "signed up" count instead of a cancel button.
+.filled {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.filledCount {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--neon-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.filledLabel {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }

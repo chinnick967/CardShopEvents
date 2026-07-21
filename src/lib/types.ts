@@ -27,6 +27,17 @@ export interface EventDTO {
   viewerJoined: boolean;
 }
 
+/**
+ * One attendee on an organizer's roster (O2). Names only — no emails: the
+ * organizer needs to know who's coming, not harvest contact info.
+ * `joinedAt` is an ISO-8601 string.
+ */
+export interface AttendeeDTO {
+  userId: number;
+  name: string;
+  joinedAt: string;
+}
+
 /** The full event, fetched when a row is expanded (P2). */
 export interface EventDetailDTO extends EventDTO {
   description: string | null;

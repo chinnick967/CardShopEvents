@@ -3,9 +3,11 @@
 import Modal from "@/components/ui/Modal";
 import type { EventDTO } from "@/lib/types";
 import EventTime from "./EventTime";
+import OrganizerEventRow from "./OrganizerEventRow";
 import styles from "./MyEventsModal.module.scss";
 
 interface Props {
+  variant: "player" | "organizer";
   events: EventDTO[];
   status: "loading" | "idle" | "error";
   cancelingId: number | null;
@@ -15,8 +17,9 @@ interface Props {
   onCancel: (event: EventDTO) => void;
 }
 
-/** Presentational — all state + fetching lives in MyEventsProvider. */
+/** Presentational — state + fetching live in EventsProvider. */
 export default function MyEventsModal({
+  variant,
   events,
   status,
   cancelingId,
@@ -25,8 +28,13 @@ export default function MyEventsModal({
   onReload,
   onCancel,
 }: Props) {
+  const isOrganizer = variant === "organizer";
+  const emptyHint = isOrganizer
+    ? "You haven’t created any upcoming events yet. Use “Create New Event” to add one."
+    : "You haven’t signed up for any upcoming events yet. Browse the board and grab a seat!";
+
   return (
-    <Modal open onClose={onClose} labelledBy="myevents-title">
+    <Modal open onClose={onClose} labelledBy="myevents-title" corner="br">
       <div className={styles.head}>
         <h2 id="myevents-title" className={styles.title}>
           My Events
@@ -51,53 +59,58 @@ export default function MyEventsModal({
       ) : events.length === 0 ? (
         <div className={styles.state}>
           <p className={styles.stateTitle}>No upcoming events</p>
-          <p className={styles.stateHint}>
-            You haven’t signed up for any upcoming events yet. Browse the board and grab a seat!
-          </p>
+          <p className={styles.stateHint}>{emptyHint}</p>
         </div>
       ) : (
         <ul className={styles.list}>
-          {events.map((event) => (
-            <li key={event.id} className={styles.item}>
-              <div className={styles.itemMain}>
-                <div className={styles.info}>
-                  <span className={styles.eventTitle}>{event.title}</span>
-                  <span className={styles.meta}>
-                    <span className={styles.game}>{event.gameType}</span>
-                    <span className={styles.dot} aria-hidden="true">
-                      ·
+          {events.map((event) =>
+            isOrganizer ? (
+              // Organizer rows expand into the attendee roster (O2); the row
+              // owns that state, so it's a component rather than inline JSX.
+              <OrganizerEventRow key={event.id} event={event} />
+            ) : (
+              <li key={event.id} className={styles.item}>
+                <div className={styles.itemMain}>
+                  <div className={styles.info}>
+                    <span className={styles.eventTitle}>{event.title}</span>
+                    <span className={styles.meta}>
+                      <span className={styles.game}>{event.gameType}</span>
+                      <span className={styles.dot} aria-hidden="true">
+                        ·
+                      </span>
+                      <EventTime iso={event.startsAt} />
                     </span>
-                    <EventTime iso={event.startsAt} />
-                  </span>
-                  <span className={styles.location}>{event.location}</span>
+                    <span className={styles.location}>{event.location}</span>
+                  </div>
+
+                  <div className={styles.actions}>
+                    <span className={styles.seats}>
+                      {event.seatsTaken}/{event.capacity}
+                    </span>
+                    <button
+                      className={styles.cancel}
+                      onClick={() => onCancel(event)}
+                      disabled={cancelingId === event.id}
+                      data-busy={cancelingId === event.id || undefined}
+                      type="button"
+                      aria-label={`Cancel your RSVP for ${event.title}`}
+                    >
+                      {cancelingId === event.id ? (
+                        <span className={styles.spinnerSm} aria-hidden="true" />
+                      ) : (
+                        "✕ Cancel"
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className={styles.actions}>
-                  <span className={styles.seats}>
-                    {event.seatsTaken}/{event.capacity}
-                  </span>
-                  <button
-                    className={styles.cancel}
-                    onClick={() => onCancel(event)}
-                    disabled={cancelingId === event.id}
-                    data-busy={cancelingId === event.id || undefined}
-                    type="button"
-                    aria-label={`Cancel your RSVP for ${event.title}`}
-                  >
-                    {cancelingId === event.id ? (
-                      <span className={styles.spinnerSm} aria-hidden="true" />
-                    ) : (
-                      "✕ Cancel"
-                    )}
-                  </button>
-                </div>
-              </div>
-              {rowError?.id === event.id ? (
-                <p className={styles.rowError} role="alert">
-                  {rowError.message}
-                </p>
-              ) : null}
-            </li>
-          ))}
+                {rowError?.id === event.id ? (
+                  <p className={styles.rowError} role="alert">
+                    {rowError.message}
+                  </p>
+                ) : null}
+              </li>
+            ),
+          )}
         </ul>
       )}
     </Modal>

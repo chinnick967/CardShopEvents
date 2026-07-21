@@ -4,8 +4,10 @@ import {
   type CreationOptional,
   type InferAttributes,
   type InferCreationAttributes,
+  type NonAttribute,
 } from "sequelize";
 import { sequelize } from "../../lib/db";
+import type { User } from "./user";
 
 /**
  * A player's active RSVP for an event. The row's existence == an active RSVP;
@@ -17,6 +19,8 @@ export class Signup extends Model<InferAttributes<Signup>, InferCreationAttribut
   declare eventId: number;
   declare userId: number;
   declare createdAt: CreationOptional<Date>;
+  /** Present only when a query eager-loads the `user` association. */
+  declare user?: NonAttribute<User>;
 }
 
 Signup.init(
