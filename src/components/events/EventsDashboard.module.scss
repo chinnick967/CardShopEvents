@@ -1,0 +1,226 @@
+@use 'breakpoints' as *;
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-size: 34px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  @media screen and (max-width: $mobile) {
+    font-size: 26px;
+  }
+}
+
+.accent {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  max-width: 52ch;
+}
+
+// ---- Toolbar --------------------------------------------------------------
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+
+  @media screen and (max-width: $mobile-small) {
+    flex-direction: column;
+  }
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 11px 12px 11px 34px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--white);
+  font: inherit;
+  font-size: 15px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder {
+    color: rgba(235, 236, 240, 0.35);
+  }
+  &:focus {
+    outline: none;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 0 3px var(--neon-cyan-soft);
+  }
+}
+
+.filter {
+  display: flex;
+}
+
+.select {
+  height: 100%;
+  padding: 11px 34px 11px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--white);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--neon-cyan) 50%),
+    linear-gradient(135deg, var(--neon-cyan) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+
+  &:focus {
+    outline: none;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 0 3px var(--neon-cyan-soft);
+  }
+
+  @media screen and (max-width: $mobile-small) {
+    width: 100%;
+  }
+}
+
+// ---- Loading / empty / error ---------------------------------------------
+.loadingBar {
+  position: relative;
+  height: 2px;
+  width: 100%;
+  background: rgba(0, 240, 255, 0.1);
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    animation: gn-indeterminate 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes gn-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+.stateBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.emptyTitle {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.emptyHint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.retry {
+  margin-top: 6px;
+  padding: 8px 18px;
+  background: transparent;
+  border: 1px solid var(--neon-cyan-edge);
+  color: var(--neon-cyan);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--neon-cyan-soft);
+  }
+}
+
+// ---- Table (desktop/tablet) vs cards (mobile) -----------------------------
+.tableWrap {
+  display: block;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead th {
+    text-align: left;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-medium);
+    font-family: var(--font-orbitron), sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.cards {
+  display: none;
+}
+
+@media screen and (max-width: $mobile) {
+  .tableWrap {
+    display: none;
+  }
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

@@ -1,0 +1,7 @@
+// Shared responsive breakpoints (mirrors GameStats / metabot.gg). Use as:
+//   @use 'breakpoints' as *;
+//   @media screen and (max-width: $mobile) { ... }
+$tablet: 1350px;
+$mobile-large: 1000px;
+$mobile: 800px;
+$mobile-small: 500px;

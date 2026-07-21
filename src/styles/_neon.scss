@@ -1,0 +1,86 @@
+// NeonBlade-inspired mixins (ported subset from metabot.gg). This partial emits
+// NO top-level CSS, so it is safe to `@use` from any component module. Shared
+// keyframes and :root tokens live in globals.scss.
+
+// ---- Clip-path corner cuts ------------------------------------------------
+// $corner: 'br' | 'bl' | 'tr' | 'tl' | 'all' | 'bl-tr'
+@mixin corner-cut($corner: 'br', $size: 14px) {
+  @if $corner == 'br' {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$size}), calc(100% - #{$size}) 100%, 0 100%);
+  } @else if $corner == 'bl' {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, #{$size} 100%, 0 calc(100% - #{$size}));
+  } @else if $corner == 'tr' {
+    clip-path: polygon(0 0, calc(100% - #{$size}) 0, 100% #{$size}, 100% 100%, 0 100%);
+  } @else if $corner == 'tl' {
+    clip-path: polygon(#{$size} 0, 100% 0, 100% 100%, 0 100%, 0 #{$size});
+  } @else if $corner == 'all' {
+    clip-path: polygon(
+      #{$size} 0,
+      calc(100% - #{$size}) 0,
+      100% #{$size},
+      100% calc(100% - #{$size}),
+      calc(100% - #{$size}) 100%,
+      #{$size} 100%,
+      0 calc(100% - #{$size}),
+      0 #{$size}
+    );
+  } @else if $corner == 'bl-tr' {
+    clip-path: polygon(0 0, calc(100% - #{$size}) 0, 100% #{$size}, 100% 100%, #{$size} 100%, 0 calc(100% - #{$size}));
+  }
+}
+
+// ---- Glow effects ---------------------------------------------------------
+@mixin box-glow($color: rgba(0, 240, 255, 0.4), $inset: rgba(0, 240, 255, 0.18), $size: 15px) {
+  box-shadow: 0 0 #{$size} #{$color}, inset 0 0 #{$size} #{$inset};
+}
+
+// drop-shadow survives clip-path clipping (box-shadow does not). Apply to the
+// non-clipped wrapper of a clipped surface.
+@mixin wrapper-glow($color: rgba(0, 240, 255, 0.35), $size: 16px) {
+  filter: drop-shadow(0 0 #{$size} #{$color});
+}
+
+// Glassy panel background for modals / raised surfaces.
+@mixin surface-glass($base: #0d0d0d) {
+  background:
+    linear-gradient(180deg, rgba(0, 240, 255, 0.05) 0%, rgba(0, 240, 255, 0) 60%),
+    #{$base};
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+// Diagonal shine sweep on hover. Uses the neon-shine-sweep keyframes from
+// globals.scss. Caller must be position:relative + overflow:hidden.
+@mixin hover-shine($duration: 0.65s) {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: 0;
+    width: 35%;
+    height: 120%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    transform: translateX(-220%) skewX(-20deg);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &:hover::after {
+    animation: neon-shine-sweep #{$duration} ease forwards;
+  }
+}
+
+// Neon border on a clipped surface: a 1px wrapper whose background IS the border
+// color, sharing the child's clip-path so the border follows the diagonal cut.
+@mixin neon-border-wrapper($corner: 'all', $size: 14px, $color: rgba(0, 240, 255, 0.4)) {
+  padding: 1px;
+  background: #{$color};
+  @include corner-cut($corner, $size);
+}
+
+@mixin neon-border-inner($corner: 'all', $size: 14px) {
+  @include corner-cut($corner, $size);
+}

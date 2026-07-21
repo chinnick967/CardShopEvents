@@ -1,0 +1,38 @@
+@use 'neon' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  animation: gn-fade 0.15s ease;
+}
+
+// drop-shadow halo that follows the clipped shape below it.
+.glowWrap {
+  @include wrapper-glow(rgba(0, 240, 255, 0.28), 20px);
+  width: 100%;
+  max-width: 430px;
+}
+
+// 1px neon border that follows the diagonal corner cut.
+.borderWrap {
+  @include neon-border-wrapper('bl-tr', 16px, var(--neon-cyan-edge));
+}
+
+.dialog {
+  @include neon-border-inner('bl-tr', 16px);
+  @include surface-glass(#0d0d0d);
+  padding: 26px 24px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+
+@keyframes gn-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

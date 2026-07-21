@@ -1,0 +1,66 @@
+@use 'neon' as *;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    filter: none;
+  }
+}
+
+.primary {
+  background: var(--neon-cyan);
+  color: #021014;
+  @include corner-cut('bl-tr', 9px);
+
+  &:not(:disabled):hover {
+    filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.7));
+  }
+}
+
+.outline {
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan-edge);
+
+  &:not(:disabled):hover {
+    background: var(--neon-cyan-soft);
+    border-color: var(--neon-cyan);
+  }
+}
+
+.ghost {
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--border-medium);
+
+  &:not(:disabled):hover {
+    border-color: var(--neon-cyan-edge);
+    color: var(--neon-cyan);
+  }
+}
+
+.spinner {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: gn-spin 0.7s linear infinite;
+}

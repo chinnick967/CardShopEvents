@@ -1,0 +1,153 @@
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.close {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--neon-cyan);
+  }
+}
+
+.reason {
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  background: var(--neon-cyan-soft);
+  border-left: 2px solid var(--neon-cyan);
+  color: var(--white);
+  font-size: 13.5px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 18px;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.tab {
+  flex: 1;
+  padding: 9px 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--muted);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+.tabActive {
+  color: var(--neon-cyan);
+  border-bottom-color: var(--neon-cyan);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.roleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roleLabel {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.roleOptions {
+  display: flex;
+  gap: 10px;
+}
+
+.roleOption {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:has(input:checked) {
+    border-color: var(--neon-cyan);
+    background: var(--neon-cyan-soft);
+  }
+
+  input {
+    accent-color: var(--neon-cyan);
+  }
+}
+
+.formError {
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.submit {
+  margin-top: 2px;
+  width: 100%;
+}
+
+.switch {
+  margin-top: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.switchLink {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--neon-cyan);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
