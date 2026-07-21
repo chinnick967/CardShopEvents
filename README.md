@@ -1,6 +1,6 @@
 # Game Night
 
-> **Live demo:** _URL coming soon_
+> **Live demo:** https://gamenight.35-87-97-8.sslip.io — playable immediately with seeded events; demo logins are in [Quick start](#quick-start) below.
 
 A tabletop-event board for a local card shop. Players browse upcoming events, see how full each one is, and RSVP first-come-first-served against a **hard seating capacity**. Organizers create events, track their own, and see each event's attendee roster. Built with Next.js 16 (App Router) + Sequelize on PostgreSQL.
 
