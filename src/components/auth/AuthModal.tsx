@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useRef, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Field from "@/components/ui/Field";
 import Button from "@/components/ui/Button";
@@ -28,10 +28,31 @@ export default function AuthModal({ open, reason, initialMode, onClose }: AuthMo
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const loginTabRef = useRef<HTMLButtonElement>(null);
+  const signupTabRef = useRef<HTMLButtonElement>(null);
+  const tabId = (m: AuthMode) => `auth-tab-${m}`;
+
   function switchMode(next: AuthMode) {
     setMode(next);
     setFieldErrors({});
     setFormError(null);
+  }
+
+  // WAI-ARIA tabs: Left/Right (and Up/Down) move between tabs with automatic
+  // activation, Home/End jump to the ends.
+  function onTabKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
+    const order: AuthMode[] = ["login", "signup"];
+    const i = order.indexOf(mode);
+    let next: AuthMode | null = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = order[(i + 1) % order.length];
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = order[(i - 1 + order.length) % order.length];
+    else if (e.key === "Home") next = order[0];
+    else if (e.key === "End") next = order[order.length - 1];
+    if (next) {
+      e.preventDefault();
+      switchMode(next);
+      (next === "login" ? loginTabRef : signupTabRef).current?.focus();
+    }
   }
 
   function update(key: keyof typeof form, value: string) {
@@ -74,26 +95,43 @@ export default function AuthModal({ open, reason, initialMode, onClose }: AuthMo
 
       <div className={styles.tabs} role="tablist" aria-label="Authentication">
         <button
+          ref={loginTabRef}
           type="button"
           role="tab"
+          id={tabId("login")}
           aria-selected={mode === "login"}
+          aria-controls="auth-panel"
+          tabIndex={mode === "login" ? 0 : -1}
           className={`${styles.tab} ${mode === "login" ? styles.tabActive : ""}`}
           onClick={() => switchMode("login")}
+          onKeyDown={onTabKeyDown}
         >
           Sign In
         </button>
         <button
+          ref={signupTabRef}
           type="button"
           role="tab"
+          id={tabId("signup")}
           aria-selected={mode === "signup"}
+          aria-controls="auth-panel"
+          tabIndex={mode === "signup" ? 0 : -1}
           className={`${styles.tab} ${mode === "signup" ? styles.tabActive : ""}`}
           onClick={() => switchMode("signup")}
+          onKeyDown={onTabKeyDown}
         >
           Create Account
         </button>
       </div>
 
-      <form className={styles.form} onSubmit={onSubmit} noValidate>
+      <form
+        className={styles.form}
+        onSubmit={onSubmit}
+        noValidate
+        role="tabpanel"
+        id="auth-panel"
+        aria-labelledby={tabId(mode)}
+      >
         {mode === "signup" && (
           <Field
             label="Name"

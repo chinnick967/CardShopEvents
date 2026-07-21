@@ -3,7 +3,7 @@ import { Orbitron, Rajdhani } from "next/font/google";
 import "../styles/globals.scss";
 import Header from "@/components/Header/Header";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import { MyEventsProvider } from "@/components/events/MyEventsProvider";
+import { EventsProvider } from "@/components/events/EventsProvider";
 import { getSessionUser } from "@/server/auth/session";
 
 const orbitron = Orbitron({
@@ -37,11 +37,16 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${orbitron.variable} ${rajdhani.variable}`}>
       <body>
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         <AuthProvider initialUser={user}>
-          <MyEventsProvider>
+          <EventsProvider>
             <Header />
-            <main className="neon-grid-bg">{children}</main>
-          </MyEventsProvider>
+            <main id="main-content" tabIndex={-1} className="neon-grid-bg">
+              {children}
+            </main>
+          </EventsProvider>
         </AuthProvider>
       </body>
     </html>

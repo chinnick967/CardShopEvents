@@ -4,25 +4,46 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EventDTO } from "@/lib/types";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { apiFetch, type ApiError } from "@/lib/apiClient";
-import { useMyEvents } from "./MyEventsProvider";
+import { useEvents } from "./EventsProvider";
 import EventRow from "./EventRow";
 import EventCard from "./EventCard";
+import { SkeletonRows, SkeletonCards } from "./EventSkeleton";
+import Select from "@/components/ui/Select";
 import styles from "./EventsDashboard.module.scss";
 
 interface Props {
   initialEvents: EventDTO[];
+  /** Cursor for the batch after `initialEvents`, or null if that's the whole list. */
+  initialCursor: string | null;
   gameTypes: string[];
 }
 
 type Status = "idle" | "loading" | "error";
 
-export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
+interface EventsPageResponse {
+  events: EventDTO[];
+  nextCursor: string | null;
+}
+
+export default function EventsDashboard({ initialEvents, initialCursor, gameTypes }: Props) {
   const { user, openAuth } = useAuth();
-  const { revision } = useMyEvents();
+  const { revision } = useEvents();
   const [events, setEvents] = useState<EventDTO[]>(initialEvents);
+  const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [q, setQ] = useState("");
   const [game, setGame] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  // True while ANY first-batch fetch is in flight (including silent ones, which
+  // never touch `status`) — pagination must pause until the list it would
+  // append to is settled.
+  const [baseLoading, setBaseLoading] = useState(false);
+  // Last known sentinel visibility. Kept as STATE, not read in a callback:
+  // IntersectionObserver only reports transitions, so "should we load more?"
+  // must be re-evaluated whenever the data changes, not only when the sentinel
+  // crosses the margin (see the driver effect below).
+  const [sentinelVisible, setSentinelVisible] = useState(false);
   // The event with an RSVP/cancel request currently in flight.
   const [busyId, setBusyId] = useState<number | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
@@ -34,6 +55,12 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
   // Synchronous in-flight guard — defeats same-tick double-clicks before the
   // disabled/busy state has re-rendered.
   const actionInFlight = useRef(false);
+  // Separate guard for pagination so a fast scroll can't fire overlapping fetches.
+  const loadMoreInFlight = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreRef = useRef<() => void>(() => {});
+
+  const hasMore = cursor !== null;
 
   // The viewer's IANA timezone, sent so the server computes "today" in their zone.
   const tz = useMemo(() => {
@@ -44,27 +71,105 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
     }
   }, []);
 
+  // Fetch the FIRST batch for the current filters (replaces the list + resets the
+  // cursor). `reqSeq` guards against out-of-order responses clobbering a newer
+  // filter's result — and also invalidates any in-flight `loadMore`.
   const fetchEvents = useCallback(
     async (qv: string, gv: string, opts?: { silent?: boolean }) => {
       const seq = ++reqSeq.current;
+      setBaseLoading(true);
       if (!opts?.silent) setStatus("loading");
       try {
         const params = new URLSearchParams();
         if (qv.trim()) params.set("q", qv.trim());
         if (gv) params.set("game", gv);
         if (tz) params.set("tz", tz);
-        const { events } = await apiFetch<{ events: EventDTO[] }>(`/api/events?${params.toString()}`);
+        const { events, nextCursor } = await apiFetch<EventsPageResponse>(`/api/events?${params.toString()}`);
         // Ignore out-of-order responses (keep only the latest request's result).
         if (seq === reqSeq.current) {
           setEvents(events);
+          setCursor(nextCursor);
+          setLoadMoreError(false); // a fresh first page resets any stale batch error
           if (!opts?.silent) setStatus("idle");
         }
       } catch {
         if (seq === reqSeq.current && !opts?.silent) setStatus("error");
+      } finally {
+        // Only the latest request may clear the flag — a superseded fetch
+        // finishing must not mark the newer one as settled.
+        if (seq === reqSeq.current) setBaseLoading(false);
       }
     },
     [tz],
   );
+
+  // Fetch the NEXT batch and append it. Tied to the current `reqSeq`: if a filter
+  // change bumps the sequence while this is in flight, the result is discarded.
+  const loadMore = useCallback(async () => {
+    if (loadMoreInFlight.current || !cursor) return;
+    loadMoreInFlight.current = true;
+    const seq = reqSeq.current;
+    setLoadingMore(true);
+    try {
+      const params = new URLSearchParams();
+      if (q.trim()) params.set("q", q.trim());
+      if (game) params.set("game", game);
+      if (tz) params.set("tz", tz);
+      params.set("cursor", cursor);
+      const { events: batch, nextCursor } = await apiFetch<EventsPageResponse>(`/api/events?${params.toString()}`);
+      if (seq !== reqSeq.current) return; // a filter change superseded this batch
+      // Dedupe by id as a safety net against an overlapping fire.
+      setEvents((prev) => {
+        const seen = new Set(prev.map((e) => e.id));
+        return [...prev, ...batch.filter((e) => !seen.has(e.id))];
+      });
+      setCursor(nextCursor);
+    } catch {
+      // Cursor stays intact; surface a retry affordance instead of silently
+      // re-firing (an auto-retry here could hot-loop on a persistent failure).
+      if (seq === reqSeq.current) setLoadMoreError(true);
+    } finally {
+      // Unconditional: even a superseded batch must stop showing skeletons.
+      setLoadingMore(false);
+      loadMoreInFlight.current = false;
+    }
+  }, [cursor, q, game, tz]);
+
+  // Keep the observer pointed at the latest `loadMore` without re-creating the
+  // observer on every state change.
+  useEffect(() => {
+    loadMoreRef.current = loadMore;
+  }, [loadMore]);
+
+  // Infinite scroll, part 1 — the observer ONLY tracks whether the sentinel is
+  // within 600px of the viewport. It deliberately doesn't fetch: observers fire
+  // on visibility *transitions*, so a sentinel that stays inside the margin
+  // across an append would never fire again and the list would stall.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => setSentinelVisible(entries[entries.length - 1]?.isIntersecting ?? false),
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      setSentinelVisible(false);
+    };
+  }, [hasMore, status]);
+
+  // Infinite scroll, part 2 — the driver. Re-evaluated whenever visibility OR
+  // the data changes, so it keeps paginating while the sentinel sits inside the
+  // margin, and it can't fire against a half-settled list: a first-batch fetch
+  // in flight (`baseLoading`) pauses it, and when that fetch lands with a new
+  // cursor this effect re-runs with the fresh state. That ordering is what
+  // prevents a stale-cursor batch from being appended onto a new filter's list.
+  useEffect(() => {
+    if (!sentinelVisible || !hasMore || baseLoading || loadMoreError) return;
+    if (status !== "idle") return;
+    loadMoreRef.current();
+  }, [sentinelVisible, hasMore, baseLoading, loadMoreError, cursor, status]);
 
   // Debounced refetch when filters change. Skip the first mount — SSR data is fresh.
   useEffect(() => {
@@ -176,9 +281,10 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
 
       <div className={styles.toolbar}>
         <div className={styles.search}>
-          <span className={styles.searchIcon} aria-hidden="true">
-            ⌕
-          </span>
+          <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" />
+            <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
           <input
             type="search"
             className={styles.searchInput}
@@ -188,22 +294,15 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
             aria-label="Search events"
           />
         </div>
-        <label className={styles.filter}>
-          <span className="sr-only">Filter by game type</span>
-          <select
+        <div className={styles.filter}>
+          <Select
             value={game}
-            onChange={(e) => setGame(e.target.value)}
+            onChange={setGame}
+            options={[{ value: "", label: "All games" }, ...gameTypes.map((g) => ({ value: g, label: g }))]}
+            ariaLabel="Filter by game type"
             className={styles.select}
-            aria-label="Filter by game type"
-          >
-            <option value="">All games</option>
-            {gameTypes.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
       </div>
 
       {status === "loading" && <div className={styles.loadingBar} role="status" aria-label="Loading events" />}
@@ -251,6 +350,7 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
                     onCancel={() => onCancel(event)}
                   />
                 ))}
+                {loadingMore && <SkeletonRows count={3} />}
               </tbody>
             </table>
           </div>
@@ -266,7 +366,31 @@ export default function EventsDashboard({ initialEvents, gameTypes }: Props) {
                 onCancel={() => onCancel(event)}
               />
             ))}
+            {loadingMore && <SkeletonCards count={3} />}
           </div>
+
+          {/* Sentinel: when this scrolls near the viewport, load the next batch. */}
+          {hasMore && <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />}
+
+          {loadingMore && (
+            <p className={styles.loadingMore} role="status">
+              <span className={styles.spinner} aria-hidden="true" />
+              Loading more events…
+            </p>
+          )}
+
+          {loadMoreError && !loadingMore && (
+            <p className={styles.loadingMore} role="alert">
+              Couldn’t load more events.
+              <button className={styles.retry} onClick={() => setLoadMoreError(false)} type="button">
+                Retry
+              </button>
+            </p>
+          )}
+
+          {!hasMore && events.length > 0 && (
+            <p className={styles.endMarker}>✓ You’ve reached the end of the list</p>
+          )}
         </>
       )}
     </section>

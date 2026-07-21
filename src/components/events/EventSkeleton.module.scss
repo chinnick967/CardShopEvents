@@ -1,0 +1,80 @@
+// Shimmer placeholders shown while the next batch is loading. Shapes mirror the
+// real row / card so the layout doesn't jump when the data arrives.
+
+.bar {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 240, 255, 0.12),
+      transparent
+    );
+    animation: gn-shimmer 1.3s ease-in-out infinite;
+  }
+}
+
+.pill {
+  height: 22px;
+  border-radius: 999px;
+  width: 84px;
+}
+
+.btn {
+  height: 30px;
+  border-radius: var(--radius);
+  width: 92px;
+  margin-left: auto;
+}
+
+@keyframes gn-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar::after {
+    animation: none;
+  }
+}
+
+// ---- Table variant --------------------------------------------------------
+.row td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: middle;
+}
+
+// ---- Card variant (mobile) ------------------------------------------------
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

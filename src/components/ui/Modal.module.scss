@@ -19,6 +19,10 @@
   max-width: 430px;
 }
 
+.glowWrapWide {
+  max-width: 620px;
+}
+
 // 1px neon border that follows the diagonal corner cut.
 .borderWrap {
   @include neon-border-wrapper('bl-tr', 16px, var(--neon-cyan-edge));
@@ -30,6 +34,18 @@
   padding: 26px 24px;
   max-height: calc(100dvh - 40px);
   overflow-y: auto;
+}
+
+// Single-chip variant — cut only the bottom-right corner (overrides the
+// default bottom-left + top-right cut on both the border wrapper and the panel).
+.cornerBr {
+  .borderWrap {
+    @include corner-cut('br', 16px);
+  }
+
+  .dialog {
+    @include corner-cut('br', 16px);
+  }
 }
 
 @keyframes gn-fade {

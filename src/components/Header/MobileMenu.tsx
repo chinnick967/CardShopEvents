@@ -9,11 +9,12 @@ interface Props {
   user: SessionUser;
   onSignOut: () => void;
   onOpenMyEvents: () => void;
+  onCreateEvent?: () => void;
 }
 
 const subscribeNoop = () => () => {};
 
-export default function MobileMenu({ user, onSignOut, onOpenMyEvents }: Props) {
+export default function MobileMenu({ user, onSignOut, onOpenMyEvents, onCreateEvent }: Props) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   // document.body (the portal target) only exists on the client.
@@ -73,6 +74,10 @@ export default function MobileMenu({ user, onSignOut, onOpenMyEvents }: Props) {
     setOpen(false);
     onOpenMyEvents();
   };
+  const handleCreateEvent = () => {
+    setOpen(false);
+    onCreateEvent?.();
+  };
   const handleSignOut = () => {
     setOpen(false);
     onSignOut();
@@ -85,7 +90,7 @@ export default function MobileMenu({ user, onSignOut, onOpenMyEvents }: Props) {
         onClick={() => setOpen(true)}
         aria-label="Open menu"
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         type="button"
       >
         <span className={styles.bar} />
@@ -126,16 +131,17 @@ export default function MobileMenu({ user, onSignOut, onOpenMyEvents }: Props) {
                 </button>
               </div>
 
-              {user.role === "player" && (
-                <>
-                  <div className={styles.separator} />
-                  <nav className={styles.menu} aria-label="Menu">
-                    <button className={styles.menuItem} onClick={handleMyEvents} type="button">
-                      My Events
-                    </button>
-                  </nav>
-                </>
-              )}
+              <div className={styles.separator} />
+              <nav className={styles.menu} aria-label="Menu">
+                <button className={styles.menuItem} onClick={handleMyEvents} type="button">
+                  My Events
+                </button>
+                {onCreateEvent && (
+                  <button className={styles.menuItem} onClick={handleCreateEvent} type="button">
+                    Create New Event
+                  </button>
+                )}
+              </nav>
             </aside>
           </>,
           document.body,

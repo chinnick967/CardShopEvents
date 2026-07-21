@@ -43,7 +43,8 @@ describe("listEvents timezone day-boundary filtering", () => {
     });
     ids.push(past.id, early.id);
 
-    const titles = new Set((await listEvents({}, undefined, "UTC")).map((e) => e.title));
+    const { events } = await listEvents({}, undefined, "UTC", { limit: 50 });
+    const titles = new Set(events.map((e) => e.title));
 
     expect(titles.has(`__tz__ yesterday ${stamp}`)).toBe(false);
     expect(titles.has(`__tz__ earlytoday ${stamp}`)).toBe(true);

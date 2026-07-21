@@ -7,9 +7,15 @@ export default function SeatBadge({ event }: { event: EventDTO }) {
   const lowThreshold = Math.max(2, Math.ceil(event.capacity * 0.15));
   const status = event.isFull ? "full" : event.seatsLeft <= lowThreshold ? "low" : "open";
 
+  const label = event.isFull
+    ? `Full — ${event.capacity} of ${event.capacity} seats taken`
+    : `${event.seatsTaken} of ${event.capacity} seats taken, ${event.seatsLeft} left`;
+
   return (
     <div className={styles.wrap}>
-      <div className={styles.counts}>
+      {/* One coherent announcement; the visual fragments below are decorative to AT. */}
+      <span className="sr-only">{label}</span>
+      <div className={styles.counts} aria-hidden="true">
         <span className={styles.taken}>{event.seatsTaken}</span>
         <span className={styles.sep}>/</span>
         <span className={styles.cap}>{event.capacity}</span>
@@ -17,7 +23,7 @@ export default function SeatBadge({ event }: { event: EventDTO }) {
       <div className={styles.track} aria-hidden="true">
         <div className={`${styles.fill} ${styles[status]}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className={`${styles.tag} ${styles[status]}`}>
+      <span className={`${styles.tag} ${styles[status]}`} aria-hidden="true">
         {event.isFull ? "Full" : `${event.seatsLeft} left`}
       </span>
     </div>

@@ -1,28 +1,36 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { apiFetch, type ApiError } from "@/lib/apiClient";
 import type { EventDTO } from "@/lib/types";
+import type { CreateEventPayload } from "@/lib/eventSchema";
 import MyEventsModal from "./MyEventsModal";
+import CreateEventModal from "./CreateEventModal";
 
-interface MyEventsContextValue {
-  openModal: () => void;
-  /** Bumped whenever a cancel happens in the modal, so the dashboard can resync. */
+interface EventsContextValue {
+  openMyEvents: () => void;
+  openCreateEvent: () => void;
+  /** Bumped when events change (cancel or create) so the dashboard can resync. */
   revision: number;
 }
 
-const MyEventsContext = createContext<MyEventsContextValue | null>(null);
+const EventsContext = createContext<EventsContextValue | null>(null);
 
-export function useMyEvents(): MyEventsContextValue {
-  const ctx = useContext(MyEventsContext);
-  if (!ctx) throw new Error("useMyEvents must be used within <MyEventsProvider>");
+export function useEvents(): EventsContextValue {
+  const ctx = useContext(EventsContext);
+  if (!ctx) throw new Error("useEvents must be used within <EventsProvider>");
   return ctx;
 }
 
+type ModalKind = "none" | "myEvents" | "create";
 type Status = "loading" | "idle" | "error";
 
-export function MyEventsProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+export function EventsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const isOrganizer = user?.role === "organizer";
+
+  const [modal, setModal] = useState<ModalKind>("none");
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [cancelingId, setCancelingId] = useState<number | null>(null);
@@ -39,27 +47,28 @@ export function MyEventsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetching happens in response to opening the modal (a user action), not in an
-  // effect — the list is always fresh without a fetch-in-effect.
+  // "My Events" data: RSVP'd events for players, organized events for organizers.
   const load = useCallback(async () => {
     setStatus("loading");
     setRowError(null);
     try {
+      const base = isOrganizer ? "/api/me/organized-events" : "/api/me/events";
       const query = tz ? `?tz=${encodeURIComponent(tz)}` : "";
-      const { events } = await apiFetch<{ events: EventDTO[] }>(`/api/me/events${query}`);
+      const { events } = await apiFetch<{ events: EventDTO[] }>(`${base}${query}`);
       setEvents(events);
       setStatus("idle");
     } catch {
       setStatus("error");
     }
-  }, [tz]);
+  }, [isOrganizer, tz]);
 
-  const openModal = useCallback(() => {
-    setOpen(true);
+  const openMyEvents = useCallback(() => {
+    setModal("myEvents");
     void load();
   }, [load]);
 
-  const closeModal = useCallback(() => setOpen(false), []);
+  const openCreateEvent = useCallback(() => setModal("create"), []);
+  const closeModal = useCallback(() => setModal("none"), []);
 
   const cancel = useCallback(async (event: EventDTO) => {
     if (cancelInFlight.current) return; // ignore double-clicks
@@ -69,7 +78,7 @@ export function MyEventsProvider({ children }: { children: ReactNode }) {
     try {
       await apiFetch<{ event: EventDTO }>(`/api/events/${event.id}/rsvp`, { method: "DELETE" });
       setEvents((prev) => prev.filter((e) => e.id !== event.id));
-      setRevision((r) => r + 1); // let the dashboard resync (freed seat / no longer "Joined")
+      setRevision((r) => r + 1);
     } catch (err) {
       const apiErr = err as ApiError;
       setRowError({ id: event.id, message: apiErr.message ?? "Could not cancel. Please try again." });
@@ -79,11 +88,22 @@ export function MyEventsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Throws (with per-field errors) on validation failure so the form can show
+  // them; on success bumps revision so the dashboard shows the new event.
+  const createEvent = useCallback(async (payload: CreateEventPayload) => {
+    await apiFetch<{ event: EventDTO }>("/api/events", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    setRevision((r) => r + 1);
+  }, []);
+
   return (
-    <MyEventsContext.Provider value={{ openModal, revision }}>
+    <EventsContext.Provider value={{ openMyEvents, openCreateEvent, revision }}>
       {children}
-      {open && (
+      {modal === "myEvents" && (
         <MyEventsModal
+          variant={isOrganizer ? "organizer" : "player"}
           events={events}
           status={status}
           cancelingId={cancelingId}
@@ -93,6 +113,7 @@ export function MyEventsProvider({ children }: { children: ReactNode }) {
           onCancel={cancel}
         />
       )}
-    </MyEventsContext.Provider>
+      {modal === "create" && <CreateEventModal onClose={closeModal} onCreate={createEvent} />}
+    </EventsContext.Provider>
   );
 }

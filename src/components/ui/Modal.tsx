@@ -7,11 +7,21 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   labelledBy?: string;
+  size?: "default" | "wide";
+  /** "default" cuts the bottom-left + top-right corners; "br" cuts only bottom-right. */
+  corner?: "default" | "br";
   children: ReactNode;
 }
 
 /** Accessible modal dialog: focus trap, Escape to close, backdrop click to close. */
-export default function Modal({ open, onClose, labelledBy, children }: ModalProps) {
+export default function Modal({
+  open,
+  onClose,
+  labelledBy,
+  size = "default",
+  corner = "default",
+  children,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,10 +48,20 @@ export default function Modal({ open, onClose, labelledBy, children }: ModalProp
         if (focusable.length === 0) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
+        const active = document.activeElement;
+        // Focus can escape to <body> when the focused control is disabled or
+        // unmounted mid-interaction (e.g. a Cancel button that removes its own
+        // row). Pull it back into the dialog rather than letting Tab walk the
+        // background page.
+        if (!active || !dialogRef.current?.contains(active)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+          return;
+        }
+        if (e.shiftKey && active === first) {
           e.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
+        } else if (!e.shiftKey && active === last) {
           e.preventDefault();
           first.focus();
         }
@@ -68,7 +88,11 @@ export default function Modal({ open, onClose, labelledBy, children }: ModalProp
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={styles.glowWrap}>
+      <div
+        className={`${styles.glowWrap} ${size === "wide" ? styles.glowWrapWide : ""} ${
+          corner === "br" ? styles.cornerBr : ""
+        }`}
+      >
         <div className={styles.borderWrap}>
           <div ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
             {children}

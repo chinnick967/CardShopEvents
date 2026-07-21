@@ -1,0 +1,96 @@
+.root {
+  position: relative;
+  display: flex;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 11px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--white);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 0 3px var(--neon-cyan-soft);
+  }
+}
+
+.value {
+  color: var(--white);
+}
+
+.placeholder {
+  color: var(--muted);
+}
+
+// CSS chevron — mirrors the old two-gradient arrow the native select drew.
+.chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: -3px;
+  border-right: 2px solid var(--neon-cyan);
+  border-bottom: 2px solid var(--neon-cyan);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.trigger[aria-expanded="true"] .chevron {
+  margin-top: 2px;
+  transform: rotate(225deg);
+}
+
+.list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+  margin: 0;
+  list-style: none;
+  background: var(--surface-2);
+  border: 1px solid var(--neon-cyan-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--glow-cyan-sm), 0 12px 28px rgba(0, 0, 0, 0.55);
+}
+
+.option {
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  color: var(--white);
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Keyboard-active and mouse-hover share this state (see Select.tsx).
+.active {
+  background: var(--neon-cyan-soft);
+  color: var(--neon-cyan);
+}
+
+.option[aria-selected="true"] {
+  color: var(--neon-cyan);
+
+  &:not(.active) {
+    background: var(--border-soft);
+  }
+}

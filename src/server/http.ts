@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ZodType } from "zod";
-import { HttpError } from "./errors";
+import { HttpError, fieldErrorsFromZod } from "./errors";
 
 /** Standard success envelope: `{ data: ... }`. */
 export function jsonOk(data: unknown, status = 200) {
@@ -38,12 +38,12 @@ export async function parseJson<T>(req: Request, schema: ZodType<T>): Promise<T>
 
   const result = schema.safeParse(raw);
   if (!result.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      const key = issue.path.join(".") || "_";
-      if (!(key in fieldErrors)) fieldErrors[key] = issue.message; // keep the first error per field
-    }
-    throw new HttpError(400, "VALIDATION", "Please correct the highlighted fields.", fieldErrors);
+    throw new HttpError(
+      400,
+      "VALIDATION",
+      "Please correct the highlighted fields.",
+      fieldErrorsFromZod(result.error),
+    );
   }
   return result.data;
 }

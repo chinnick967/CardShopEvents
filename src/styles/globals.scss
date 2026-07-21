@@ -90,6 +90,21 @@ button {
   outline-offset: 2px;
 }
 
+// Respect users who ask for reduced motion. Every loading spinner/bar in the app
+// is paired with text or an aria-live status, so freezing their motion still
+// conveys state — no information is lost. Individual components may still add
+// their own more specific rules on top of this baseline.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 main {
   flex: 1;
   width: 100%;
@@ -155,6 +170,39 @@ main {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+// Keyboard "skip to content" link — first tab stop, revealed only on focus so it
+// lets keyboard users jump past the header instead of tabbing through it.
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  padding: 10px 16px;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--white);
+  background: var(--surface-2);
+  border: 1px solid var(--neon-cyan);
+  border-radius: var(--radius);
+  box-shadow: var(--glow-cyan-sm);
+  // Tucked just off the top edge; slides in when focused.
+  transform: translateY(-150%);
+  transition: transform 0.15s ease;
+
+  &:focus-visible {
+    transform: translateY(0);
+  }
+}
+
+// A programmatically focused landmark (e.g. after the skip link) shouldn't draw
+// the focus ring the way an interactive control does.
+main:focus {
+  outline: none;
 }
 
 // Themed thin scrollbar.

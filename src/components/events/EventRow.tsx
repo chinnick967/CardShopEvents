@@ -35,7 +35,7 @@ export default function EventRow({ event, busy, error, onSignUp, onCancel }: Pro
               toggle();
             }}
             aria-expanded={expanded}
-            aria-controls={detailId}
+            aria-controls={expanded ? detailId : undefined}
             aria-label={expanded ? `Hide details for ${event.title}` : `Show details for ${event.title}`}
           >
             ▸

@@ -42,11 +42,92 @@
   gap: 10px;
 }
 
+// The brand mark — a fanned pair of game cards.
 .mark {
+  display: inline-flex;
+  align-items: center;
   color: var(--neon-cyan);
-  font-size: 16px;
-  text-shadow: 0 0 10px var(--neon-cyan);
-  animation: neon-pulse-soft 2.6s ease-in-out infinite;
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.cardIcon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  overflow: visible; // let the cyan glow spill past the viewBox
+  // Slow "breathe" — the whole icon glows brighter and softer on a calm loop.
+  animation: gn-card-glow 4.5s ease-in-out infinite;
+}
+
+// Back card sits behind, fanned up-left; leans out further on hover.
+.backCard {
+  transform-box: fill-box;
+  transform-origin: 50% 96%;
+  transform: rotate(-13deg);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.pip {
+  opacity: 0.92;
+}
+
+// A single diagonal glint that crosses the front card, then rests.
+.sheen {
+  animation: gn-card-sheen 5.5s ease-in-out infinite;
+}
+
+.brand:hover {
+  .mark {
+    transform: scale(1.06);
+  }
+
+  .backCard {
+    transform: rotate(-23deg);
+  }
+}
+
+@keyframes gn-card-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2.5px rgba(0, 240, 255, 0.45));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.85));
+  }
+}
+
+@keyframes gn-card-sheen {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  20% {
+    transform: translateX(16px);
+    opacity: 1;
+  }
+  26%,
+  100% {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+
+// Respect users who prefer reduced motion — keep a soft static glow only.
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .cardIcon,
+  .sheen,
+  .backCard {
+    animation: none;
+    transition: none;
+  }
+
+  .cardIcon {
+    filter: drop-shadow(0 0 3px var(--neon-cyan-strong));
+  }
 }
 
 .name {
@@ -85,6 +166,34 @@
     background: var(--neon-cyan-soft);
     border-color: var(--neon-cyan);
   }
+}
+
+.createEvent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: var(--neon-cyan);
+  color: #021014;
+  border: none;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: filter 0.18s ease;
+
+  &:hover {
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.7));
+  }
+}
+
+.createPlus {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .signIn {
